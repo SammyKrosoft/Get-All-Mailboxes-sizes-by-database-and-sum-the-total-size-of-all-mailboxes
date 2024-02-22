@@ -29,7 +29,7 @@ ForEach ($Database in $Databases) {
     # NOTE3: this is because if you have just 1 mailbox, the $Mailboxes variable is not an array by default. So we "force" it to be an array at the first place, and it will be a 1 item array in case
     # we have just 1 mailbox returned by the Get-Mailbox statement!
     $MAilboxes = @()
-    $Mailboxes += Get-Mailbox -Database $Database.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} | Select Identity | % {Get-MailboxStatistics -Identity $_.Identity | Select DisplayName, PrimarySMTPADdress, TotalItemSize, TotalDeletedItemSize}
+    $Mailboxes += Get-Mailbox -Database $Database.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity | % {Get-MailboxStatistics -Identity $_.Identity | Select DisplayName, PrimarySMTPADdress, TotalItemSize, TotalDeletedItemSize}
     Write-Host "Nb Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
     If ($MAilboxes.Count -gt 0){
         # Loop through each mailbox
@@ -70,7 +70,7 @@ $TotalSizeOfMAilboxesKB = ($MailboxSizeCollection | Measure-Object -Property "Mb
 $TotalSizeOfMailboxesMB = ($MailboxSizeCollection | Measure-Object -Property "MbxSize(In MB)" -Sum).Sum
 $TotalSizeOfMailboxesGB = ($MailboxSizeCollection | Measure-Object -Property "MbxSize(In GB)" -Sum).Sum
 
-Write-Host "Total Number of Mailboxes: $NumberOfMailboxes`n`n" -ForegroundColor Yellow -BackgroundColor DarkBlue
+Write-Host "`n`nTotal Number of Mailboxes: $NumberOfMailboxes`n`n" -ForegroundColor Yellow -BackgroundColor DarkBlue
 
 Write-Host "Total Size of Mailboxes in KB: $TotalSizeOfMailboxesKB KB" -ForegroundColor Green -BackgroundColor Blue
 Write-Host "Total Size of Mailboxes in MB: $TotalSizeOfMailboxesMB MB" -ForegroundColor Yellow -BackgroundColor Blue

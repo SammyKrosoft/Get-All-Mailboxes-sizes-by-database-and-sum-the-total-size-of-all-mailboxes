@@ -5,18 +5,19 @@ $OutputFile = "MailboxSizes_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv
 # Get the current user's documents folder, and store it in a variable
 $DocumentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
-#Define array variable
+#Define array variable that will store all the mailbox objects with the size information
 $MailboxSizeCollection = @()
 
 # Get all your databases
 $Databases = Get-MailboxDatabase
+Write-Host "We will pass through $($Databases.count) databases ! Hang out, Mike ! :-)`n`n" -ForegroundColor Yellow
 # Initialize the counter for the progress bar
 $CounterDB = 0
 # Loop through each database
 ForEach ($Database in $Databases) {
     $CounterDB++
-    WRite-Host $CounterDB -ForegroundColor Green
-    Write-Host $Database -ForegroundColor Red -BackgroundColor Blue
+    Write-Host "**** Database counter: $CounterDB ****" -ForegroundColor Green
+    Write-Host "Database name: $Database" -ForegroundColor Red -BackgroundColor Blue
     
     $percentCompleteDB = ($CounterDB / $Databases.Count) * 100
     Write-Progress -Id 1 -Activity "Calculating Mailbox Sizes" -Status "Calculating Mailbox Sizes for Database: $($Database.Name)" -PercentComplete $percentCompleteDB
@@ -31,7 +32,7 @@ ForEach ($Database in $Databases) {
     $MAilboxes = @()
     $Mailboxes += Get-Mailbox -Database $Database.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity | % {Get-MailboxStatistics -Identity $_.Identity | Select DisplayName, PrimarySMTPADdress, TotalItemSize, TotalDeletedItemSize}
     Write-Host "Nb Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
-    If ($MAilboxes.Count -gt 0){
+    If ($Mailboxes.Count -gt 0){
         # Loop through each mailbox
         # Initialize the counter for the mailboxes progress bar
         $CounterMB = 0
@@ -77,3 +78,5 @@ Write-Host "Total Size of Mailboxes in MB: $TotalSizeOfMailboxesMB MB" -Foregrou
 Write-Host "Total Size of Mailboxes in GB: $TotalSizeOfMailboxesGB GB" -ForegroundColor White -BackgroundColor Blue
 
 Write-Host "`n`nMailbox Sizes gathered successfully and saved to $DocumentsFolder\$OutputFile!" -ForegroundColor White -BackgroundColor DarkBlue
+
+Write-Host "`n You did well, Mike ! :-)" -ForegroundColor Yellow

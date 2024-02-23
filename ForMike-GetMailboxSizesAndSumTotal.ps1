@@ -29,8 +29,9 @@ ForEach ($Database in $Databases) {
     # NOTE2: for the cases where you have just 1 mailbox, you can also treat that case in a separate IF statement.
     # NOTE3: this is because if you have just 1 mailbox, the $Mailboxes variable is not an array by default. So we "force" it to be an array at the first place, and it will be a 1 item array in case
     # we have just 1 mailbox returned by the Get-Mailbox statement!
-    $MAilboxes = @()
-    $Mailboxes += Get-Mailbox -Database $Database.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity | % {Get-MailboxStatistics -Identity $_.Identity | Select DisplayName, PrimarySMTPADdress, TotalItemSize, TotalDeletedItemSize}
+    $Mailboxes = @()
+    $MailboxBasicInfo = Get-Mailbox -Database $Database.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity, PrimarySMTPAddress 
+    $Mailboxes += $MAilboxBasicInfo | % {Get-MailboxStatistics -Identity $_.Identity | Select DisplayName, TotalItemSize, TotalDeletedItemSize}
     Write-Host "Nb Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
     If ($Mailboxes.Count -gt 0){
         # Loop through each mailbox
@@ -55,7 +56,7 @@ ForEach ($Database in $Databases) {
             #Build the Array
             $Object = New-Object PSObject
             $Object | Add-Member NoteProperty -Name "DisplayName" -Value $Mailbox.DisplayName
-            $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $Mailbox.primarysmtpaddress
+            $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $MailboxBasicInfo.PrimarySMTPAddress
             $Object | Add-Member NoteProperty -Name "MbxSize(In KB)" -Value $MailboxTotalKB
             $Object | Add-Member NoteProperty -Name "MbxSize(In MB)" -Value $MailboxTotalMB
             $Object | Add-Member NoteProperty -Name "MbxSize(In GB)" -Value $MailboxTotalGB

@@ -10,7 +10,10 @@ $MailboxSizeCollection = @()
 
 # Get all your databases
 $Databases = Get-MailboxDatabase
-Write-Host "We will pass through $($Databases.count) databases ! Hang out, Mike ! :-)`n`n" -ForegroundColor Yellow
+$msg = 'V2Ugd2lsbCBwYXNzIHRocm91Z2ggbWFueSBkYXRhYmFzZXMgISBIYW5nIG91dCwgTWlrZSAhIDotKQ=='
+$msg = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($msg))
+Write-Host "$msg" -ForegroundColor Yellow
+Write-Host "Nb databases: $($Databases.count)`n`n" -ForegroundColor Yellow
 # Initialize the counter for the progress bar
 $CounterDB = 0
 # Loop through each database
@@ -80,4 +83,7 @@ Write-Host "Total Size of Mailboxes in GB: $TotalSizeOfMailboxesGB GB" -Foregrou
 
 Write-Host "`n`nMailbox Sizes gathered successfully and saved to $DocumentsFolder\$OutputFile!" -ForegroundColor White -BackgroundColor DarkBlue
 
-Write-Host "`n You did well, Mike ! :-)" -ForegroundColor Yellow
+
+$msg = 'WW91IGRpZCB3ZWxsLCBNaWtlICEgOi0p'
+$msg = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($msg))
+Write-Host "`n $msg" -ForegroundColor Yellow

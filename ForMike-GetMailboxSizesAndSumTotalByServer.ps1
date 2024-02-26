@@ -1,15 +1,23 @@
 cls
 # Very initial variables
 # Define the output file path and name, with the date and time
-$OutputFile = "MailboxSizes_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
+$OutputFile = "MailboxSizes_Server1_Server2_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
 # Get the current user's documents folder, and store it in a variable
 $DocumentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
 #Define array variable that will store all the mailbox objects with the size information
 $MailboxSizeCollection = @()
 
-# Get all your Servers
-$Servers = Get-ExchangeServer | Select Identity,Name,fqdn
+# Get all your Servers (Uncomment to get all servers)
+# $Servers = Get-ExchangeServer | Select Identity,Name,fqdn
+# List of servers
+$ServerNames = "Server1", "Server2"
+
+$Servers = @()
+Foreach ($ServerName in $ServerNames){
+    $Servers += [PSCustomObject]@{Name=$ServerName;Identity=$ServerName}
+}
+
 $msg = 'V2Ugd2lsbCBwYXNzIHRocm91Z2ggbWFueSBkYXRhYmFzZXMgISBIYW5nIG91dCwgTWlrZSAhIDotKQ==';$msg = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($msg));Write-Host "$msg" -ForegroundColor Yellow
 Write-Host "Number of Servers: $($Servers.count)`n`n" -ForegroundColor Yellow
 # Initialize the counter for the progress bar
@@ -31,8 +39,8 @@ ForEach ($Server in $Servers) {
     # NOTE3: this is because if you have just 1 mailbox, the $Mailboxes variable is not an array by default. So we "force" it to be an array at the first place, and it will be a 1 item array in case
     # we have just 1 mailbox returned by the Get-Mailbox statement!
     $Mailboxes = @()
-    $MailboxBasicInfo = Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity, PrimarySMTPAddress 
-    $Mailboxes += $MAilboxBasicInfo | % {Get-MailboxStatistics -Identity $_.Identity | Select DisplayName, TotalItemSize, TotalDeletedItemSize}
+    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity, PrimarySMTPAddress 
+    
     Write-Host "Number of Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
     If ($Mailboxes.Count -gt 0){
         # Loop through each mailbox
@@ -43,12 +51,14 @@ ForEach ($Server in $Servers) {
             $percentCompleteMB = ($CounterMB / $Mailboxes.Count) * 100
             Write-Progress -ParentId 1 -Activity "Calculating Mailbox Sizes" -Status "Calculating Mailbox Sizes for Mailbox: $($Mailbox.DisplayName)" -PercentComplete $percentCompleteMB
             
-            $TotalItemSizeInKB = $Mailbox.TotalItemSize.Value.ToKB() | Measure-Object -Sum
-            $TotalItemSizeInMB = $Mailbox.TotalItemSize.Value.ToMB() | Measure-object -sum
-            $TotalItemSizeInGB = $Mailbox.TotalItemSize.Value.ToGB() | Measure-Object -Sum
-            $TotalDeletedItemSizeInKB = $Mailbox.TotalDeletedItemSize.Value.ToKB() | Measure-Object -Sum
-            $TotalDeletedItemSizeInMB = $Mailbox.TotalDeletedItemSize.Value.ToMB() | Measure-object -sum
-            $TotalDeletedItemSizeInGB = $Mailbox.TotalDeletedItemSize.Value.ToGB() | Measure-Object -sum
+            $MailboxStats = Get-MailboxStatistics -Identity $Mailbox.Identity | Select DisplayName, TotalItemSize, TotalDeletedItemSize
+
+            $TotalItemSizeInKB = $MailboxStats.TotalItemSize.Value.ToKB() | Measure-Object -Sum
+            $TotalItemSizeInMB = $MailboxStats.TotalItemSize.Value.ToMB() | Measure-object -sum
+            $TotalItemSizeInGB = $MailboxStats.TotalItemSize.Value.ToGB() | Measure-Object -Sum
+            $TotalDeletedItemSizeInKB = $MailboxStats.TotalDeletedItemSize.Value.ToKB() | Measure-Object -Sum
+            $TotalDeletedItemSizeInMB = $MailboxStats.TotalDeletedItemSize.Value.ToMB() | Measure-object -sum
+            $TotalDeletedItemSizeInGB = $MailboxStats.TotalDeletedItemSize.Value.ToGB() | Measure-Object -sum
 
             $MailboxTotalKB = $TotalItemSizeInKB.sum + $TotalDeletedItemSizeInKB.sum
             $MailboxTotalMB = $TotalItemSizeInMB.sum + $TotalDeletedItemSizeInMB.sum

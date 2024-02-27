@@ -1,7 +1,9 @@
 cls
+$ErrorActionPreference = "Stop"
 # Very initial variables
 # Define the output file path and name, with the date and time
 $OutputFile = "MailboxSizes_Server1_Server2_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
+$ErrorLogFile = "ErrorLog_Server1_Server2_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".txt"
 # Get the current user's documents folder, and store it in a variable
 $DocumentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
@@ -11,7 +13,7 @@ $MailboxSizeCollection = @()
 # Get all your Servers (Uncomment to get all servers)
 # $Servers = Get-ExchangeServer | Select Identity,Name,fqdn
 # List of servers
-$ServerNames = "Server1", "Server2"
+$ServerNames = "E2016-01", "E2019-01"
 
 $Servers = @()
 Foreach ($ServerName in $ServerNames){
@@ -25,10 +27,10 @@ $CounterSVR = 0
 # Loop through each Server
 ForEach ($Server in $Servers) {
     $CounterSVR++
-    Write-Host "**** Server counter: $CounterSRV ****" -ForegroundColor Green
+    Write-Host "**** Server counter: $CounterSVR ****" -ForegroundColor Green
     Write-Host "Server name: $($Server.Name)" -ForegroundColor Red -BackgroundColor Blue
     
-    $percentCompleteDB = ($CounterSRV / $Servers.Count) * 100
+    $percentCompleteDB = ($CounterSVR / $Servers.Count) * 100
     Write-Progress -Id 1 -Activity "Calculating Mailbox Sizes" -Status "Calculating Mailbox Sizes for Server: $($Server.Name)" -PercentComplete $percentCompleteDB
 
     # Get all mailboxes in the Server
@@ -39,7 +41,7 @@ ForEach ($Server in $Servers) {
     # NOTE3: this is because if you have just 1 mailbox, the $Mailboxes variable is not an array by default. So we "force" it to be an array at the first place, and it will be a 1 item array in case
     # we have just 1 mailbox returned by the Get-Mailbox statement!
     $Mailboxes = @()
-    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity, PrimarySMTPAddress 
+    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity, PrimarySMTPAddress, DisplayName
     
     Write-Host "Number of Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
     If ($Mailboxes.Count -gt 0){
@@ -50,28 +52,40 @@ ForEach ($Server in $Servers) {
             $CounterMB++
             $percentCompleteMB = ($CounterMB / $Mailboxes.Count) * 100
             Write-Progress -ParentId 1 -Activity "Calculating Mailbox Sizes" -Status "Calculating Mailbox Sizes for Mailbox: $($Mailbox.DisplayName)" -PercentComplete $percentCompleteMB
-            
-            $MailboxStats = Get-MailboxStatistics -Identity $Mailbox.Identity | Select DisplayName, TotalItemSize, TotalDeletedItemSize
 
-            $TotalItemSizeInKB = $MailboxStats.TotalItemSize.Value.ToKB() | Measure-Object -Sum
-            $TotalItemSizeInMB = $MailboxStats.TotalItemSize.Value.ToMB() | Measure-object -sum
-            $TotalItemSizeInGB = $MailboxStats.TotalItemSize.Value.ToGB() | Measure-Object -Sum
-            $TotalDeletedItemSizeInKB = $MailboxStats.TotalDeletedItemSize.Value.ToKB() | Measure-Object -Sum
-            $TotalDeletedItemSizeInMB = $MailboxStats.TotalDeletedItemSize.Value.ToMB() | Measure-object -sum
-            $TotalDeletedItemSizeInGB = $MailboxStats.TotalDeletedItemSize.Value.ToGB() | Measure-Object -sum
+            Try {
+                $MailboxStats = Get-MailboxStatistics -Identity $Mailbox.Identity | Select DisplayName, TotalItemSize, TotalDeletedItemSize
 
-            $MailboxTotalKB = $TotalItemSizeInKB.sum + $TotalDeletedItemSizeInKB.sum
-            $MailboxTotalMB = $TotalItemSizeInMB.sum + $TotalDeletedItemSizeInMB.sum
-            $MailboxTotalGB = $TotalItemSizeInGB.sum + $TotalDeletedItemSizeInGB.sum
-    
-            #Build the Array
-            $Object = New-Object PSObject
-            $Object | Add-Member NoteProperty -Name "DisplayName" -Value $Mailbox.DisplayName
-            $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $MailboxBasicInfo.PrimarySMTPAddress
-            $Object | Add-Member NoteProperty -Name "MbxSize(In KB)" -Value $MailboxTotalKB
-            $Object | Add-Member NoteProperty -Name "MbxSize(In MB)" -Value $MailboxTotalMB
-            $Object | Add-Member NoteProperty -Name "MbxSize(In GB)" -Value $MailboxTotalGB
-            $MailboxSizeCollection += $Object    
+                $TotalItemSizeInKB = $MailboxStats.TotalItemSize.Value.ToKB() | Measure-Object -Sum
+                $TotalItemSizeInMB = $MailboxStats.TotalItemSize.Value.ToMB() | Measure-object -sum
+                $TotalItemSizeInGB = $MailboxStats.TotalItemSize.Value.ToGB() | Measure-Object -Sum
+                $TotalDeletedItemSizeInKB = $MailboxStats.TotalDeletedItemSize.Value.ToKB() | Measure-Object -Sum
+                $TotalDeletedItemSizeInMB = $MailboxStats.TotalDeletedItemSize.Value.ToMB() | Measure-object -sum
+                $TotalDeletedItemSizeInGB = $MailboxStats.TotalDeletedItemSize.Value.ToGB() | Measure-Object -sum
+
+                $MailboxTotalKB = $TotalItemSizeInKB.sum + $TotalDeletedItemSizeInKB.sum
+                $MailboxTotalMB = $TotalItemSizeInMB.sum + $TotalDeletedItemSizeInMB.sum
+                $MailboxTotalGB = $TotalItemSizeInGB.sum + $TotalDeletedItemSizeInGB.sum
+
+                #Build the Array
+                $Object = New-Object PSObject
+                $Object | Add-Member NoteProperty -Name "DisplayName" -Value $Mailbox.DisplayName
+                $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $Mailbox.PrimarySMTPAddress
+                $Object | Add-Member NoteProperty -Name "MbxSize(In KB)" -Value $MailboxTotalKB
+                $Object | Add-Member NoteProperty -Name "MbxSize(In MB)" -Value $MailboxTotalMB
+                $Object | Add-Member NoteProperty -Name "MbxSize(In GB)" -Value $MailboxTotalGB
+                $MailboxSizeCollection += $Object 
+            } 
+            Catch {
+                $msg = "Error getting mailbox statistics for $($Mailbox.DisplayName) on $($Server.Name)"
+                $LastErrorMessage = $_.Exception.Message
+                Write-Host $msg -ForegroundColor Red
+                Write-Host $LastErorrMessage -ForegroundColor Green
+                $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                $date + " - " + $msg | out-file -FilePath "$DocumentsFolder\$ErrorLogFile" -Append
+                $date + " - " + $LastErrorMessage | out-file -FilePath "$DocumentsFolder\$ErrorLogFile" -Append
+                
+            }
         }
     }
 }

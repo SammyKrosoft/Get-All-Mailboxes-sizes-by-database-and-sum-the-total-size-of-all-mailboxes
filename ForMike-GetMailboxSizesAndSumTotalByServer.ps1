@@ -1,5 +1,6 @@
 cls
 $ErrorActionPreference = "Stop"
+$DomainController = "GC01.CanadaDrey.Local"
 # Very initial variables
 # Define the output file path and name, with the date and time
 $OutputFile = "MailboxSizes_Server1_Server2_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
@@ -13,7 +14,7 @@ $MailboxSizeCollection = @()
 # Get all your Servers (Uncomment to get all servers)
 # $Servers = Get-ExchangeServer | Select Identity,Name,fqdn
 # List of servers
-$ServerNames = "E2016-01", "E2019-01"
+$ServerNames = "E2016-01", "E2019-01", "E2016-02"
 
 $Servers = @()
 Foreach ($ServerName in $ServerNames){
@@ -41,7 +42,7 @@ ForEach ($Server in $Servers) {
     # NOTE3: this is because if you have just 1 mailbox, the $Mailboxes variable is not an array by default. So we "force" it to be an array at the first place, and it will be a 1 item array in case
     # we have just 1 mailbox returned by the Get-Mailbox statement!
     $Mailboxes = @()
-    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited | Select Identity, PrimarySMTPAddress, DisplayName
+    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited -DomainController $DomainController -ErrorAction "SilentlyContinue"| Select Identity, PrimarySMTPAddress, DisplayName
     
     Write-Host "Number of Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
     If ($Mailboxes.Count -gt 0){
@@ -54,7 +55,7 @@ ForEach ($Server in $Servers) {
             Write-Progress -ParentId 1 -Activity "Calculating Mailbox Sizes" -Status "Calculating Mailbox Sizes for Mailbox: $($Mailbox.DisplayName)" -PercentComplete $percentCompleteMB
 
             Try {
-                $MailboxStats = Get-MailboxStatistics -Identity $Mailbox.Identity | Select DisplayName, TotalItemSize, TotalDeletedItemSize
+                $MailboxStats = Get-MailboxStatistics -Identity $Mailbox.Identity -DomainController $DomainController | Select DisplayName, TotalItemSize, TotalDeletedItemSize
 
                 $TotalItemSizeInKB = $MailboxStats.TotalItemSize.Value.ToKB() | Measure-Object -Sum
                 $TotalItemSizeInMB = $MailboxStats.TotalItemSize.Value.ToMB() | Measure-object -sum
@@ -87,6 +88,11 @@ ForEach ($Server in $Servers) {
                 
             }
         }
+    } Else {
+                $msg = "No mAilboxes on server $($Server.Name)"
+                Write-Host $msg -ForegroundColor Green
+                $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                $date + " - " + $msg | out-file -FilePath "$DocumentsFolder\$ErrorLogFile" -Append
     }
 }
 

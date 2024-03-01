@@ -1,10 +1,19 @@
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory=$true, HelpMessage="Enter the Domain Controller to use")]
+    [string]$DomainController,
+    [Parameter(Mandatory=$false, HelpMessage="Enter the Server Name")]
+    [string[]]$ServerNames = ("E2016-01", "E2019-01")
+
+)
+
 cls
 $ErrorActionPreference = "Stop"
-$DomainController = "GC01.CanadaDrey.Local"
 # Very initial variables
 # Define the output file path and name, with the date and time
-$OutputFile = "MailboxSizes_Server1_Server2_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
-$ErrorLogFile = "ErrorLog_Server1_Server2_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".txt"
+$OutputFileSuffix = $ServerNames -join "_"
+$OutputFile = "MailboxSizes_$($OutputFileSuffix)_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
+$ErrorLogFile = "ErrorLog_$($OutputFileSuffix)_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".txt"
 # Get the current user's documents folder, and store it in a variable
 $DocumentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
@@ -13,8 +22,7 @@ $MailboxSizeCollection = @()
 
 # Get all your Servers (Uncomment to get all servers)
 # $Servers = Get-ExchangeServer | Select Identity,Name,fqdn
-# List of servers
-$ServerNames = "E2016-01", "E2019-01", "E2016-02"
+
 
 $Servers = @()
 Foreach ($ServerName in $ServerNames){
@@ -57,24 +65,16 @@ ForEach ($Server in $Servers) {
             Try {
                 $MailboxStats = Get-MailboxStatistics -Identity $Mailbox.Identity -DomainController $DomainController | Select DisplayName, TotalItemSize, TotalDeletedItemSize
 
-                $TotalItemSizeInKB = $MailboxStats.TotalItemSize.Value.ToKB() | Measure-Object -Sum
-                $TotalItemSizeInMB = $MailboxStats.TotalItemSize.Value.ToMB() | Measure-object -sum
-                $TotalItemSizeInGB = $MailboxStats.TotalItemSize.Value.ToGB() | Measure-Object -Sum
-                $TotalDeletedItemSizeInKB = $MailboxStats.TotalDeletedItemSize.Value.ToKB() | Measure-Object -Sum
-                $TotalDeletedItemSizeInMB = $MailboxStats.TotalDeletedItemSize.Value.ToMB() | Measure-object -sum
-                $TotalDeletedItemSizeInGB = $MailboxStats.TotalDeletedItemSize.Value.ToGB() | Measure-Object -sum
+                $TotalItemSizeInBytes = $MailboxStats.TotalItemSize.Value.ToBytes() | Measure-Object -Sum
+                $TotalDeletedItemSizeInBytes = $MailboxStats.TotalDeletedItemSize.Value.ToBytes() | Measure-Object -Sum
 
-                $MailboxTotalKB = $TotalItemSizeInKB.sum + $TotalDeletedItemSizeInKB.sum
-                $MailboxTotalMB = $TotalItemSizeInMB.sum + $TotalDeletedItemSizeInMB.sum
-                $MailboxTotalGB = $TotalItemSizeInGB.sum + $TotalDeletedItemSizeInGB.sum
+                $MailboxTotalBytes = $TotalItemSizeInBytes.sum + $TotalDeletedItemSizeInBytes.sum
 
                 #Build the Array
                 $Object = New-Object PSObject
                 $Object | Add-Member NoteProperty -Name "DisplayName" -Value $Mailbox.DisplayName
                 $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $Mailbox.PrimarySMTPAddress
-                $Object | Add-Member NoteProperty -Name "MbxSize(In KB)" -Value $MailboxTotalKB
-                $Object | Add-Member NoteProperty -Name "MbxSize(In MB)" -Value $MailboxTotalMB
-                $Object | Add-Member NoteProperty -Name "MbxSize(In GB)" -Value $MailboxTotalGB
+                $Object | Add-Member NoteProperty -Name "MbxSize(In Bytes)" -Value $MailboxTotalBytes
                 $MailboxSizeCollection += $Object 
             } 
             Catch {
@@ -89,7 +89,7 @@ ForEach ($Server in $Servers) {
             }
         }
     } Else {
-                $msg = "No mAilboxes on server $($Server.Name)"
+                $msg = "No Mailboxes on server $($Server.Name)"
                 Write-Host $msg -ForegroundColor Green
                 $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
                 $date + " - " + $msg | out-file -FilePath "$DocumentsFolder\$ErrorLogFile" -Append
@@ -99,13 +99,15 @@ ForEach ($Server in $Servers) {
 $MailboxSizeCollection | Export-Csv -Path "$DocumentsFolder\$OutputFile" -NoTypeInformation
 
 $NumberOfMailboxes = $MailboxSizeCollection.Count
-$TotalSizeOfMAilboxesKB = ($MailboxSizeCollection | Measure-Object -Property "MbxSize(In KB)" -Sum).Sum
-$TotalSizeOfMailboxesMB = ($MailboxSizeCollection | Measure-Object -Property "MbxSize(In MB)" -Sum).Sum
-$TotalSizeOfMailboxesGB = ($MailboxSizeCollection | Measure-Object -Property "MbxSize(In GB)" -Sum).Sum
+$TotalSizeOfMAilboxesBytes = ($MailboxSizeCollection | Measure-Object -Property "MbxSize(In Bytes)" -Sum).Sum
+
+# Converting total size from Bytes to MegaBytes and GigaBytes
+$TotalSizeOfMailboxesMB = [math]::Round($TotalSizeOfMAilboxesBytes / 1MB, 2)
+$TotalSizeOfMailboxesGB = [math]::Round($TotalSizeOfMAilboxesBytes / 1GB, 2)
 
 Write-Host "`n`nTotal Number of Mailboxes: $NumberOfMailboxes`n`n" -ForegroundColor Yellow -BackgroundColor DarkBlue
 
-Write-Host "Total Size of Mailboxes in KB: $TotalSizeOfMailboxesKB KB" -ForegroundColor Green -BackgroundColor Blue
+Write-Host "Total Size of Mailboxes in Bytes: $TotalSizeOfMailboxesBytes Bytes" -ForegroundColor Green -BackgroundColor Blue
 Write-Host "Total Size of Mailboxes in MB: $TotalSizeOfMailboxesMB MB" -ForegroundColor Yellow -BackgroundColor Blue
 Write-Host "Total Size of Mailboxes in GB: $TotalSizeOfMailboxesGB GB" -ForegroundColor White -BackgroundColor Blue
 
@@ -113,3 +115,19 @@ Write-Host "`n`nMailbox Sizes gathered successfully and saved to $DocumentsFolde
 
 
 $msg = 'WW91IGRpZCB3ZWxsLCBNaWtlICEgOi0p';$msg = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($msg));Write-Host "`n $msg" -ForegroundColor Yellow
+
+#### Info for later on to concatenate the CSV files and calculate the total size of all mailboxes from the CSV files
+
+
+$import = get-childitem "$($env:Userprofile)\Documents\*.csv" | % {Import-Csv $_}
+ 
+$TotalSumInBytes = ($import | Measure-Object -Property "MbxSize(In Bytes)" -Sum).sum
+$TotalMBXCSV = $import.count
+$TotalSumInB = [math]::Round($TotalSumInBytes, 0)
+$TotalSumInMB = [math]::Round($TotalSumInBytes / 1MB, 2)
+$TotalSumInGB = [math]::Round($TotalSumInBytes / 1GB, 2)
+
+write-Host "`n`nTotal number of mailboxes on all CSVs: $TotalMBXCSV mailboxes" -BackgroundColor Yellow -ForegroundColor blue
+Write-Host "`n`nTotal Sum of all Mailboxes in Bytes: $($TotalSumInB) Bytes" -ForegroundColor Green -BackgroundColor Blue
+Write-Host "Total Sum of all Mailboxes in MB: $TotalSumInMB MB" -ForegroundColor Yellow -BackgroundColor Blue
+Write-Host "Total Sum of all Mailboxes in GB: $TotalSumInGB GB" -ForegroundColor White -BackgroundColor Blue

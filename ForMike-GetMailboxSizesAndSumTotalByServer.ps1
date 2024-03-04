@@ -50,7 +50,7 @@ ForEach ($Server in $Servers) {
     # NOTE3: this is because if you have just 1 mailbox, the $Mailboxes variable is not an array by default. So we "force" it to be an array at the first place, and it will be a 1 item array in case
     # we have just 1 mailbox returned by the Get-Mailbox statement!
     $Mailboxes = @()
-    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited -DomainController $DomainController -ErrorAction "SilentlyContinue"| Select Identity, PrimarySMTPAddress, DisplayName
+    $Mailboxes += Get-Mailbox -Server $Server.Identity -Filter {Name -notlike "*DiscoverySearchMailbox*"} -ResultSize Unlimited -DomainController $DomainController -ErrorAction "SilentlyContinue"| Select Identity, PrimarySMTPAddress, DisplayName, Database
     
     Write-Host "Number of Mailboxes: $($Mailboxes.count)" -ForegroundColor Red
     If ($Mailboxes.Count -gt 0){
@@ -75,6 +75,8 @@ ForEach ($Server in $Servers) {
                 $Object | Add-Member NoteProperty -Name "DisplayName" -Value $Mailbox.DisplayName
                 $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $Mailbox.PrimarySMTPAddress
                 $Object | Add-Member NoteProperty -Name "MbxSize(In Bytes)" -Value $MailboxTotalBytes
+                $Object | Add-Member NoteProperty -Name "Server" -Value $Server
+                $Object | Add-Member NoteProperty -Name "Database" -Value $Mailbox.Database
                 $MailboxSizeCollection += $Object 
             } 
             Catch {

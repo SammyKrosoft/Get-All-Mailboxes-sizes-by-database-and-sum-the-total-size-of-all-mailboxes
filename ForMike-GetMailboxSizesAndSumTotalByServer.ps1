@@ -75,7 +75,7 @@ ForEach ($Server in $Servers) {
                 $Object | Add-Member NoteProperty -Name "DisplayName" -Value $Mailbox.DisplayName
                 $Object | Add-Member NoteProperty -Name "PrimarySMTPAddress" -Value $Mailbox.PrimarySMTPAddress
                 $Object | Add-Member NoteProperty -Name "MbxSize(In Bytes)" -Value $MailboxTotalBytes
-                $Object | Add-Member NoteProperty -Name "Server" -Value $Server
+                $Object | Add-Member NoteProperty -Name "Server" -Value $Server.Name
                 $Object | Add-Member NoteProperty -Name "Database" -Value $Mailbox.Database
                 $MailboxSizeCollection += $Object 
             } 

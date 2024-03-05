@@ -1,5 +1,4 @@
-# Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes
-Get All  Mailboxes sizes by database and sum the total size of all mailboxes
+# Script to get All  Mailboxes sizes by server or database, and sum the total size of all mailboxes
 What I changed:
 
 -	Added the “-DomainController” mandatory parameter (below example my Lab domain controller is “GC01”)

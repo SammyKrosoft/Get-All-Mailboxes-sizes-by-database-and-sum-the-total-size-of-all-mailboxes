@@ -9,19 +9,23 @@ What I changed:
 -	The script spits out 3 files:
 
 o	Error log (if there are errors)
+
  ![image](https://github.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/assets/33433229/26bef11c-5c20-4439-b66c-0e2aee8b5845)
 
 
 o	Mailbox sizes file
+
  ![image](https://github.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/assets/33433229/ed45f72d-99ca-4911-bc2e-7894eee58066)
 
 
 o	Summary file with the total size for the last script run
+
  ![image](https://github.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/assets/33433229/f4e44588-9e50-4f7f-8d37-71f7fd362661)
 
 
 
 The “package” has the exact same date_time suffix, and consists of 2 txt, and 1 csv:
+
  ![image](https://github.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/assets/33433229/f00c49d9-7e0b-4d6f-bb5c-96b01f7803d1)
 
 

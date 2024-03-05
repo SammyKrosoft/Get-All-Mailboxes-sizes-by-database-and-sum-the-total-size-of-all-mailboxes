@@ -12,8 +12,9 @@ $ErrorActionPreference = "Stop"
 # Very initial variables
 # Define the output file path and name, with the date and time
 $OutputFileSuffix = $ServerNames -join "_"
-$OutputFile = "MailboxSizes_$($OutputFileSuffix)_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".csv"
-$ErrorLogFile = "ErrorLog_$($OutputFileSuffix)_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".txt"
+$OutputFileDateSuffix = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$OutputFile = "MailboxSizes_$($OutputFileSuffix)_" + $OutputFileDateSuffix + ".csv"
+$ErrorLogFile = "ErrorLog_$($OutputFileSuffix)_" + $OutputFileDateSuffix + ".txt"
 # Get the current user's documents folder, and store it in a variable
 $DocumentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
@@ -120,7 +121,7 @@ $ObjSummary | Add-Member NoteProperty -Name "Total Size of Mailboxes in Bytes" -
 $ObjSummary | Add-Member NoteProperty -Name "Total Size of Mailboxes in MB" -Value $TotalSizeOfMailboxesMB
 $ObjSummary | Add-Member NoteProperty -Name "Total Size of Mailboxes in GB" -Value $TotalSizeOfMailboxesGB
 
-$ObjeSummary | Export-Csv -Path "$DocumentsFolder\Summary_$OutputFile" -NoTypeInformation
+$ObjSummary | Export-Csv -Path "$DocumentsFolder\Summary_$($OutputFileSuffix)_$($OutputFileDateSuffix).txt" -NoTypeInformation
 
 
 Write-Host "`n`nMailbox Sizes gathered successfully and saved to $DocumentsFolder\$OutputFile!" -ForegroundColor White -BackgroundColor DarkBlue

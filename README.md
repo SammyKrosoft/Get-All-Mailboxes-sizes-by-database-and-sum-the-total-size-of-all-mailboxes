@@ -54,3 +54,7 @@ Write-Host "Total Sum of all Mailboxes in GB: $TotalSumInGB GB" -ForegroundColor
 
 Write-Host "`n`n*******************************************************************************************************************************"
 ```
+
+# Download script (link to this repo's latest script)
+
+[Download script here (Save Target As...)](https://raw.githubusercontent.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/main/ForMike-GetMailboxSizesAndSumTotalByServer.ps1)

@@ -4,7 +4,9 @@ What I changed:
 -	Added the “-DomainController” mandatory parameter (below example my Lab domain controller is “GC01”)
 -	Added “-ServerNames” parameter (optional but default is E2016-01, E2019-01), add as many servers as you want, from 1 to 16 servers
 
+```powershell
 .\ ForMike-GetMailboxSizesAndSumTotalByServer.ps1 -DomainController GC01 -ServerNames E2016-01, E2019-01 
+```
 
 -	The script spits out 3 files:
 

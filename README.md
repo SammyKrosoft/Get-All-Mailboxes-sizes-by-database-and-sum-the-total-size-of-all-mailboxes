@@ -57,4 +57,4 @@ Write-Host "`n`n****************************************************************
 
 # Download script (link to this repo's latest script)
 
-[Download script here (Save Target As...)](https://raw.githubusercontent.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/main/ForMike-GetMailboxSizesAndSumTotalByServer.ps1)
+[Download script here (Save Link As... - or click, and copy-paste the script text in Notepad and save as .ps1 file)](https://raw.githubusercontent.com/SammyKrosoft/Get-All-Mailboxes-sizes-by-database-and-sum-the-total-size-of-all-mailboxes/main/ForMike-GetMailboxSizesAndSumTotalByServer.ps1)

@@ -113,6 +113,16 @@ Write-Host "Total Size of Mailboxes in Bytes: $TotalSizeOfMailboxesBytes Bytes" 
 Write-Host "Total Size of Mailboxes in MB: $TotalSizeOfMailboxesMB MB" -ForegroundColor Yellow -BackgroundColor Blue
 Write-Host "Total Size of Mailboxes in GB: $TotalSizeOfMailboxesGB GB" -ForegroundColor White -BackgroundColor Blue
 
+$ObjSummary = New-Object PSObject
+$ObjSummary | Add-Member NoteProperty -Name "Server(s)" -Value ($ServerNames -Join ";")
+$ObjSummary | Add-Member NoteProperty -Name "Total Number of Mailboxes" -Value $NumberOfMailboxes
+$ObjSummary | Add-Member NoteProperty -Name "Total Size of Mailboxes in Bytes" -Value $TotalSizeOfMailboxesBytes
+$ObjSummary | Add-Member NoteProperty -Name "Total Size of Mailboxes in MB" -Value $TotalSizeOfMailboxesMB
+$ObjSummary | Add-Member NoteProperty -Name "Total Size of Mailboxes in GB" -Value $TotalSizeOfMailboxesGB
+
+$ObjeSummary | Export-Csv -Path "$DocumentsFolder\Summary_$OutputFile" -NoTypeInformation
+
+
 Write-Host "`n`nMailbox Sizes gathered successfully and saved to $DocumentsFolder\$OutputFile!" -ForegroundColor White -BackgroundColor DarkBlue
 
 
@@ -120,6 +130,7 @@ $msg = 'WW91IGRpZCB3ZWxsLCBNaWtlICEgOi0p';$msg = [System.Text.Encoding]::UTF8.Ge
 
 #### Info for later on to concatenate the CSV files and calculate the total size of all mailboxes from the CSV files
 
+Write-Host "`n`n******************** Displaying statistics for mailboxes information on ALL CSVs in the current directorty ********************"
 
 $import = get-childitem "$($env:Userprofile)\Documents\*.csv" | % {Import-Csv $_}
  
@@ -129,7 +140,12 @@ $TotalSumInB = [math]::Round($TotalSumInBytes, 0)
 $TotalSumInMB = [math]::Round($TotalSumInBytes / 1MB, 2)
 $TotalSumInGB = [math]::Round($TotalSumInBytes / 1GB, 2)
 
+
+
+
 write-Host "`n`nTotal number of mailboxes on all CSVs: $TotalMBXCSV mailboxes" -BackgroundColor Yellow -ForegroundColor blue
 Write-Host "`n`nTotal Sum of all Mailboxes in Bytes: $($TotalSumInB) Bytes" -ForegroundColor Green -BackgroundColor Blue
 Write-Host "Total Sum of all Mailboxes in MB: $TotalSumInMB MB" -ForegroundColor Yellow -BackgroundColor Blue
 Write-Host "Total Sum of all Mailboxes in GB: $TotalSumInGB GB" -ForegroundColor White -BackgroundColor Blue
+
+Write-Host "`n`n*******************************************************************************************************************************"
